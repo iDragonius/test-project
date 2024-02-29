@@ -23,12 +23,13 @@ import { Label } from "@/components/ui/label";
 import { SignUpData, SignUpStepsEnum } from "@/app/(auth)/sign-up/page";
 import { useToast } from "@/components/ui/use-toast";
 import Config from "@/config";
-import { formatNumber } from "@/lib/utils";
+import { UserProps } from "@/types";
 
 export interface UserInfoFormProps {
   changeStep(step: SignUpStepsEnum): void;
   data: SignUpData;
   setData: Dispatch<SetStateAction<SignUpData>>;
+  usersData: UserProps[];
 }
 const formSchema = z.object({
   name: z.string().min(1),
@@ -42,7 +43,12 @@ const formSchema = z.object({
   phoneNumber: z.string().min(1),
 });
 
-const UserInfoForm: FC<UserInfoFormProps> = ({ changeStep, data, setData }) => {
+const UserInfoForm: FC<UserInfoFormProps> = ({
+  changeStep,
+  data,
+  setData,
+  usersData,
+}) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -68,6 +74,18 @@ const UserInfoForm: FC<UserInfoFormProps> = ({ changeStep, data, setData }) => {
     form.setValue("repeatPassword", data.userInfo.repeatPassword);
     form.setValue("password", data.userInfo.password);
     form.setValue("phoneNumber", data.userInfo.phoneNumber);
+    setOtps((prevState) => ({
+      phoneNumber: {
+        isActive: false,
+        otp: "",
+        confirmed: data.userInfo.isPhoneNumberConfirmed,
+      },
+      email: {
+        isActive: false,
+        otp: "",
+        confirmed: data.userInfo.isEmailConfirmed,
+      },
+    }));
   }, []);
   const { toast } = useToast();
   function onSubmit(values: z.infer<typeof formSchema>) {
@@ -85,15 +103,43 @@ const UserInfoForm: FC<UserInfoFormProps> = ({ changeStep, data, setData }) => {
       });
       return;
     }
-    changeStep(SignUpStepsEnum.CONTACT_INFO);
+    const isCompanyExist = !!usersData.find((u) => {
+      const companyDomain =
+        u.email.split("@").length === 2 ? u.email.split("@")[1] : null;
+      const newCompanyDomain =
+        values.email.split("@").length === 2
+          ? values.email.split("@")[1]
+          : null;
+      if (companyDomain && newCompanyDomain) {
+        return companyDomain === newCompanyDomain;
+      }
+    });
+    const isCompanyHRRegistered = !!usersData.find((u) => {
+      const companyDomain =
+        u.email.split("@").length === 2 ? u.email.split("@")[1] : null;
+      const newCompanyDomain =
+        values.email.split("@").length === 2
+          ? values.email.split("@")[1]
+          : null;
+      if (companyDomain && newCompanyDomain) {
+        return companyDomain === newCompanyDomain && u.role === "HR";
+      }
+    });
+    if (isCompanyExist) {
+      changeStep(SignUpStepsEnum.RULES);
+    } else {
+      changeStep(SignUpStepsEnum.CONTACT_INFO);
+    }
 
     setData((prevState) => ({
       ...prevState,
       userInfo: {
-        ...form.getValues(),
+        ...values,
         isEmailConfirmed: otps.email.confirmed,
         isPhoneNumberConfirmed: otps.phoneNumber.confirmed,
       },
+      isCompanyHRRegistered,
+      isCompanyExist,
     }));
   }
   const [otps, setOtps] = useState<{

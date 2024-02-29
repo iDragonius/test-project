@@ -6,25 +6,43 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
+import { UserProps } from "@/types";
 
 export interface RulesFormProps {
   data: SignUpData;
   setData: Dispatch<SetStateAction<SignUpData>>;
   changeStep(step: SignUpStepsEnum): void;
+  usersData: UserProps[];
 }
 
-const RulesForm: FC<RulesFormProps> = ({ data, setData, changeStep }) => {
+const RulesForm: FC<RulesFormProps> = ({
+  data,
+  setData,
+  changeStep,
+  usersData,
+}) => {
   const [checked, setChecked] = useState<boolean>(false);
   const { push } = useRouter();
   const { toast } = useToast();
+
   const completeRegistration = () => {
-    if (checked) {
-      push("/sign-in");
-      toast({
-        title: "Success!",
-      });
-    }
+    localStorage.setItem(
+      "usersData",
+      JSON.stringify([
+        ...usersData,
+        {
+          role: checked ? "HR" : "USER",
+          email: data.userInfo.email,
+          companyName: data.contactInfo.companyName,
+        } as UserProps,
+      ]),
+    );
+    push("/sign-in");
+    toast({
+      title: "Success!",
+    });
   };
+
   return (
     <div>
       <h2 className={"font-semibold text-[18px] mb-3"}>
@@ -45,23 +63,32 @@ const RulesForm: FC<RulesFormProps> = ({ data, setData, changeStep }) => {
         molestias nam, nemo perferendis, quibusdam quidem, quisquam rem
         temporibus ut?
       </p>
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="terms"
-          checked={checked}
-          onCheckedChange={(state) => setChecked(state as boolean)}
-        />
-        <label
-          htmlFor="terms"
-          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-        >
-          Mən şirkətin rəsmi nümayəndəsiyəm
-        </label>
-      </div>
+      {!data.isCompanyHRRegistered && (
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="terms"
+            checked={checked}
+            onCheckedChange={(state) => setChecked(state as boolean)}
+          />
+          <label
+            htmlFor="terms"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Mən şirkətin rəsmi nümayəndəsiyəm
+          </label>
+        </div>
+      )}
+
       <div className={"flex items-center justify-between mt-16"}>
         <Button
           type={"button"}
-          onClick={() => changeStep(SignUpStepsEnum.CONTACT_INFO)}
+          onClick={() => {
+            if (data.isCompanyExist) {
+              changeStep(SignUpStepsEnum.USER_INFO);
+            } else {
+              changeStep(SignUpStepsEnum.CONTACT_INFO);
+            }
+          }}
           className={
             "bg-indigo-200 text-indigo-600 hover:bg-indigo-300 w-[200px] flex gap-2"
           }

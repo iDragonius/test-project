@@ -6,6 +6,7 @@ import UserInfoForm from "@/app/(auth)/components/sign-up-steps/user-info-form";
 import RulesForm from "@/app/(auth)/components/sign-up-steps/rules-form";
 import ContactInfoForm from "@/app/(auth)/components/sign-up-steps/contact-info-form";
 import { Button } from "@/components/ui/button";
+import { UserProps } from "@/types";
 
 export interface PageProps {}
 export type SignUpStepProps = {
@@ -57,6 +58,8 @@ export type SignUpData = {
     email: string;
     phoneNumber: string;
   };
+  isCompanyHRRegistered: boolean;
+  isCompanyExist: boolean;
 };
 const Page: FC<PageProps> = () => {
   const [currentStep, setCurrentStep] = useState<SignUpStepsEnum>(
@@ -83,11 +86,23 @@ const Page: FC<PageProps> = () => {
       workersCount: "",
       subCompany: "",
     },
+    isCompanyHRRegistered: false,
+    isCompanyExist: false,
   });
 
   function changeStep(step: SignUpStepsEnum) {
     setCurrentStep(step);
   }
+
+  const [usersData, setUsersData] = useState<UserProps[]>([]);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const usersDataJSON = localStorage.getItem("usersData");
+      if (usersDataJSON) {
+        setUsersData(JSON.parse(usersDataJSON));
+      }
+    }
+  }, []);
   return (
     <main
       className={
@@ -117,17 +132,28 @@ const Page: FC<PageProps> = () => {
           steps={SignUpSteps}
         />
         {currentStep === SignUpStepsEnum.USER_INFO && (
-          <UserInfoForm changeStep={changeStep} data={data} setData={setData} />
+          <UserInfoForm
+            changeStep={changeStep}
+            data={data}
+            setData={setData}
+            usersData={usersData}
+          />
         )}
         {currentStep === SignUpStepsEnum.CONTACT_INFO && (
           <ContactInfoForm
             changeStep={changeStep}
             data={data}
             setData={setData}
+            usersData={usersData}
           />
         )}
         {currentStep === SignUpStepsEnum.RULES && (
-          <RulesForm data={data} setData={setData} changeStep={changeStep} />
+          <RulesForm
+            data={data}
+            setData={setData}
+            changeStep={changeStep}
+            usersData={usersData}
+          />
         )}
       </div>
     </main>

@@ -21,11 +21,13 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { UserProps } from "@/types";
 
 export interface ContactInfoFormProps {
   changeStep(step: SignUpStepsEnum): void;
   data: SignUpData;
   setData: Dispatch<SetStateAction<SignUpData>>;
+  usersData: UserProps[];
 }
 const formSchema = z.object({
   companyName: z.string().min(1),
@@ -40,6 +42,7 @@ const ContactInfoForm: FC<ContactInfoFormProps> = ({
   changeStep,
   data,
   setData,
+  usersData,
 }) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -60,10 +63,9 @@ const ContactInfoForm: FC<ContactInfoFormProps> = ({
     form.setValue("phoneNumber", data.contactInfo.phoneNumber);
   }, []);
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
     setData((prevState) => ({
       ...prevState,
-      contactInfo: form.getValues(),
+      contactInfo: values,
     }));
     changeStep(SignUpStepsEnum.RULES);
   }
@@ -77,10 +79,10 @@ const ContactInfoForm: FC<ContactInfoFormProps> = ({
               name="companyName"
               render={({ field }) => (
                 <FormItem className={"w-full"}>
-                  <FormLabel>Ad</FormLabel>
+                  <FormLabel>Qurumun adı</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Emin"
+                      placeholder="Qurumun adını daxil et"
                       className={"!w-full !mt-1"}
                       {...field}
                     />
